@@ -81,7 +81,10 @@ category: blog
 2. http vs https:http就是普通的转发请求，而遇到https请求的时候，代理是没办法验证证书的，所以七层的是没办法work的；那怎么做到的呢？
 
    > HTTP 客户端通过 CONNECT 方法请求隧道代理创建一条到达任意目的服务器和端口的 TCP 连接，并对客户端和服务器之间的后继数据进行盲转发。
-
+   
+   浏览器挂代理之后https发出的方法是connect,下面的图是通过demo搭的代理截图。http请求get，https connect。
+   
+    ![proxy](https://github.com/miss-fox/image/blob/master/2731A138244FA673AF5BB4CF4D7B68A6.png?raw=true)
 3. Vpn,vpn是专用网络，基于IPSec的都是在网络层
 
    
