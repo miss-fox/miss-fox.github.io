@@ -16,7 +16,7 @@ select `action`,count(*) from table1 where type=13101 and created_at>'2019-06-25
    1. Timestamp类型虽然每次查询出来都是形如'2019-06-25 00:00:00'的格式，其实 底层存储的时间戳。展示的值依赖时区。四个字节，只能到2038年。
 
    2. 时区：
-      Client连接数据库的时候会有timezone设定，连接过来的是timeformat（php代码string）的数据，存储的时候，会根据连接的时区转换成timestamp存入。这条数据在不同时区的客户端的展示可能会不同。client-connection的 default值参考[mysql文档](https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_time_zone)，默认是global timezone（而global 的init是system timezone）。也可以通过SET time_zone='+04:00';的方式重新设置当前 会话的时区。demo如下：
+      Client连接数据库的时候会有timezone设定，client请求过来的是timeformat（比如php代码string）的数据，存储的时候，会根据连接的时区转换成timestamp时间戳存入。这条数据在不同时区的客户端的展示可能会不同。client-connection的 default值参考[mysql文档](https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_time_zone)，默认是global timezone（而global 的init是system timezone，所以如果没有改过配置，默认是system）。可以通过改配置修改global timezone,也可以通过SET time_zone='+04:00';的方式重新设置当前 会话的时区。demo如下：
 
       表结构 ：实际存储的是1562840484这个时间戳（北京的18:21:24）
    
@@ -66,7 +66,7 @@ select `action`,count(*) from table1 where type=13101 and created_at>'2019-06-25
       test_date 2019-07-11 19:48:24//不变
       ```
    
-      可以看出client1通过代码强制把时区设置了东四区，navicate是东八区，两个客户端读到的test_time展示不同。    同时也发现对于datetime类型底层存的就是文本，没有时区转换的概念。
+      可以看出client1通过代码强制把时区设置了东四区，navicate是东八区，两个客户端读到的test_time展示不同。    同时也发现对于datetime类型底层存的就是数字，是把时间字符串转换成格式为YYYYMMDDHHMMSS的整数，没有时区转换的概念。
    
 2. timestamp客户端时区不一致的问题
 
@@ -87,7 +87,7 @@ select `action`,count(*) from table1 where type=13101 and created_at>'2019-06-25
    (
        [id] => 51
        [0] => 51
-   [test_time] => 2019-07-11 10:21:24//这里会话是utc时区，所以对比东四的慢4个小时
+       [test_time] => 2019-07-11 10:21:24//这里会话是utc时区，所以对比东四的慢4个小时
        [1] => 2019-07-11 10:21:24
        [test_date] => 2019-07-11 19:48:24
        [2] => 2019-07-11 19:48:24
@@ -102,8 +102,8 @@ select `action`,count(*) from table1 where type=13101 and created_at>'2019-06-25
 
    平时写入的时候一般会用int存储时间戳，这样代码层面根据自己的时区随便转化，可以避免2提到的问题，不用timestamp,客户端读取的时候更直观。timestamp占4个字节（最大,2038/1/19）
 
-   datetime存储的是文本。占用8个字节。
-
+   datetime存储的是把时间字符串转换成格式为YYYYMMDDHHMMSS的整数，没有时区转换的概念，写入的时候是什么就是什么。占用8个字节。
+   下面是各个类型的性能分析，这个地方对于timestamp类型和int类型如果都是存储的时间戳（如果建了索引，理论是都是数字型的b+树）为什么在查询中会有性能差距这个还不太清楚，下面是一个性能对照的参考
    [性能](https://www.jianshu.com/p/b22ac1754372)
 
 
